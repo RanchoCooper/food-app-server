@@ -1,6 +1,6 @@
 package interfaces
 
-import "food-app/utils/mock"
+import "food-app-server/utils/mock"
 
 var (
 	userApp    mock.UserAppInterface
@@ -9,8 +9,8 @@ var (
 	fakeAuth   mock.AuthInterface
 	fakeToken  mock.TokenInterface
 
-	s  = NewUsers(&userApp, &fakeAuth, &fakeToken)                       //We use all mocked data here
-	f  = NewFood(&foodApp, &userApp, &fakeUpload, &fakeAuth, &fakeToken) //We use all mocked data here
-	au = NewAuthenticate(&userApp, &fakeAuth, &fakeToken)                //We use all mocked data here
+	s  = NewUsers(&userApp, &fakeAuth, &fakeToken)                       // We use all mocked data here
+	f  = NewFood(&foodApp, &userApp, &fakeUpload, &fakeAuth, &fakeToken) // We use all mocked data here
+	au = NewAuthenticate(&userApp, &fakeAuth, &fakeToken)                // We use all mocked data here
 
 )

@@ -1,9 +1,13 @@
 package persistence
 
 import (
-	"food-app/domain/entity"
-	"github.com/stretchr/testify/assert"
+	"reflect"
 	"testing"
+	"time"
+
+	"food-app-server/domain/entity"
+	"github.com/jinzhu/gorm"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSaveFood_Success(t *testing.T) {
@@ -25,14 +29,14 @@ func TestSaveFood_Success(t *testing.T) {
 	assert.EqualValues(t, f.UserID, 1)
 }
 
-//Failure can be due to duplicate email, etc
-//Here, we will attempt saving a food that is already saved
+// Failure can be due to duplicate email, etc
+// Here, we will attempt saving a food that is already saved
 func TestSaveFood_Failure(t *testing.T) {
 	conn, err := DBConn()
 	if err != nil {
 		t.Fatalf("want non error, got %#v", err)
 	}
-	//seed the food
+	// seed the food
 	_, err = seedFood(conn)
 	if err != nil {
 		t.Fatalf("want non error, got %#v", err)
@@ -96,7 +100,7 @@ func TestUpdateFood_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("want non error, got %#v", err)
 	}
-	//updating
+	// updating
 	food.Title = "food title update"
 	food.Description = "food description update"
 
@@ -110,7 +114,7 @@ func TestUpdateFood_Success(t *testing.T) {
 	assert.EqualValues(t, f.UserID, 1)
 }
 
-//Duplicate title error
+// Duplicate title error
 func TestUpdateFood_Failure(t *testing.T) {
 	conn, err := DBConn()
 	if err != nil {
@@ -122,14 +126,14 @@ func TestUpdateFood_Failure(t *testing.T) {
 	}
 	var secondFood entity.Food
 
-	//get the second food title
+	// get the second food title
 	for _, v := range foods {
 		if v.ID == 1 {
 			continue
 		}
 		secondFood = v
 	}
-	secondFood.Title = "first food" //this title belongs to the first food already, so the second food cannot use it
+	secondFood.Title = "first food" // this title belongs to the first food already, so the second food cannot use it
 	secondFood.Description = "New description"
 
 	repo := NewFoodRepository(conn)
@@ -157,4 +161,83 @@ func TestDeleteFood_Success(t *testing.T) {
 	deleteErr := repo.DeleteFood(food.ID)
 
 	assert.Nil(t, deleteErr)
+}
+
+func TestFoodRepo_SaveFood(t *testing.T) {
+	conn, err := DBConn()
+	if err != nil {
+		t.Fatalf("want non error, got %#v", err)
+	}
+	type fields struct {
+		db *gorm.DB
+	}
+	type args struct {
+		food *entity.Food
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   *entity.Food
+		want1  map[string]string
+	}{
+		{
+			name:   "test case",
+			fields: fields{db: conn},
+			args: args{food: &entity.Food{
+				UserID:      1,
+				Title:       "title1",
+				Description: "description",
+				FoodImage:   "food image",
+				CreatedAt:   time.Time{},
+				UpdatedAt:   time.Time{},
+				DeletedAt:   nil,
+			}},
+			want:  nil,
+			want1: nil,
+		},
+		{
+			name:   "test case",
+			fields: fields{db: conn},
+			args: args{food: &entity.Food{
+				UserID:      22,
+				Title:       "title2",
+				Description: "description",
+				FoodImage:   "food image",
+				CreatedAt:   time.Time{},
+				UpdatedAt:   time.Time{},
+				DeletedAt:   nil,
+			}},
+			want:  nil,
+			want1: nil,
+		},
+		{
+			name:   "test case",
+			fields: fields{db: conn},
+			args: args{food: &entity.Food{
+				UserID:      33,
+				Title:       "title3",
+				Description: "description",
+				FoodImage:   "food image",
+				CreatedAt:   time.Time{},
+				UpdatedAt:   time.Time{},
+				DeletedAt:   nil,
+			}},
+			want:  nil,
+			want1: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := &FoodRepo{
+				db: tt.fields.db,
+			}
+			got, got1 := r.SaveFood(tt.args.food)
+			t.Log(got)
+			t.Log(got1)
+			if !reflect.DeepEqual(got1, tt.want1) {
+				t.Errorf("SaveFood() got1 = %v, want %v", got1, tt.want1)
+			}
+		})
+	}
 }

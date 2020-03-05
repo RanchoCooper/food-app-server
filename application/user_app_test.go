@@ -1,12 +1,12 @@
 package application
 
 import (
-	"food-app/domain/entity"
+	"food-app-server/domain/entity"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
-//IF YOU HAVE TIME, YOU CAN TEST ALL THE METHODS FAILURES
+// IF YOU HAVE TIME, YOU CAN TEST ALL THE METHODS FAILURES
 
 var (
 	saveUserRepo                func(*entity.User) (*entity.User, map[string]string)
@@ -30,10 +30,10 @@ func (u *fakeUserRepo) GetUserByEmailAndPassword(user *entity.User) (*entity.Use
 	return getUserEmailAndPasswordRepo(user)
 }
 
-var userAppFake UserAppInterface = &fakeUserRepo{} //this is where the real implementation is swap with our fake implementation
+var userAppFake UserAppInterface = &fakeUserRepo{} // this is where the real implementation is swap with our fake implementation
 
 func TestSaveUser_Success(t *testing.T) {
-	//Mock the response coming from the infrastructure
+	// Mock the response coming from the infrastructure
 	saveUserRepo = func(user *entity.User) (*entity.User, map[string]string) {
 		return &entity.User{
 			ID:        1,
@@ -58,7 +58,7 @@ func TestSaveUser_Success(t *testing.T) {
 }
 
 func TestGetUser_Success(t *testing.T) {
-	//Mock the response coming from the infrastructure
+	// Mock the response coming from the infrastructure
 	getUserRepo = func(userId uint64) (*entity.User, error) {
 		return &entity.User{
 			ID:        1,
@@ -77,7 +77,7 @@ func TestGetUser_Success(t *testing.T) {
 }
 
 func TestGetUsers_Success(t *testing.T) {
-	//Mock the response coming from the infrastructure
+	// Mock the response coming from the infrastructure
 	getUsersRepo = func() ([]entity.User, error) {
 		return []entity.User{
 			{
@@ -102,7 +102,7 @@ func TestGetUsers_Success(t *testing.T) {
 }
 
 func TestGetUserByEmailAndPassword_Success(t *testing.T) {
-	//Mock the response coming from the infrastructure
+	// Mock the response coming from the infrastructure
 	getUserEmailAndPasswordRepo = func(user *entity.User) (*entity.User, map[string]string) {
 		return &entity.User{
 			ID:        1,

@@ -11,7 +11,6 @@ import (
 	"time"
 )
 
-
 type Token struct{}
 
 func NewToken() *Token {
@@ -23,7 +22,7 @@ type TokenInterface interface {
 	ExtractTokenMetadata(*http.Request) (*AccessDetails, error)
 }
 
-//Token implements the TokenInterface
+// Token implements the TokenInterface
 var _ TokenInterface = &Token{}
 
 func (t *Token) CreateToken(userid uint64) (*TokenDetails, error) {
@@ -35,7 +34,7 @@ func (t *Token) CreateToken(userid uint64) (*TokenDetails, error) {
 	td.RefreshUuid = td.TokenUuid + "++" + strconv.Itoa(int(userid))
 
 	var err error
-	//Creating Access Token
+	// Creating Access Token
 	atClaims := jwt.MapClaims{}
 	atClaims["authorized"] = true
 	atClaims["access_uuid"] = td.TokenUuid
@@ -46,7 +45,7 @@ func (t *Token) CreateToken(userid uint64) (*TokenDetails, error) {
 	if err != nil {
 		return nil, err
 	}
-	//Creating Refresh Token
+	// Creating Refresh Token
 	rtClaims := jwt.MapClaims{}
 	rtClaims["refresh_uuid"] = td.RefreshUuid
 	rtClaims["user_id"] = userid
@@ -73,7 +72,7 @@ func TokenValid(r *http.Request) error {
 func VerifyToken(r *http.Request) (*jwt.Token, error) {
 	tokenString := ExtractToken(r)
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		//Make sure that the token method conform to "SigningMethodHMAC"
+		// Make sure that the token method conform to "SigningMethodHMAC"
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
@@ -85,7 +84,7 @@ func VerifyToken(r *http.Request) (*jwt.Token, error) {
 	return token, nil
 }
 
-//get the token from the request body
+// get the token from the request body
 func ExtractToken(r *http.Request) string {
 	bearToken := r.Header.Get("Authorization")
 	strArr := strings.Split(bearToken, " ")

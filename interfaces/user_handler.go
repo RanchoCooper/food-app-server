@@ -1,22 +1,23 @@
 package interfaces
 
 import (
-	"food-app/application"
-	"food-app/domain/entity"
-	"food-app/utils/auth"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
+
+	"food-app-server/application"
+	"food-app-server/domain/entity"
+	"food-app-server/utils/auth"
+	"github.com/gin-gonic/gin"
 )
 
-//Users struct defines the dependencies that will be used
+// Users struct defines the dependencies that will be used
 type Users struct {
 	us application.UserAppInterface
 	rd auth.AuthInterface
 	tk auth.TokenInterface
 }
 
-//Users constructor
+// Users constructor
 func NewUsers(us application.UserAppInterface, rd auth.AuthInterface, tk auth.TokenInterface) *Users {
 	return &Users{
 		us: us,
@@ -33,7 +34,7 @@ func (s *Users) SaveUser(c *gin.Context) {
 		})
 		return
 	}
-	//validate the request:
+	// validate the request:
 	validateErr := user.Validate("")
 	if len(validateErr) > 0 {
 		c.JSON(http.StatusUnprocessableEntity, validateErr)
@@ -48,9 +49,9 @@ func (s *Users) SaveUser(c *gin.Context) {
 }
 
 func (s *Users) GetUsers(c *gin.Context) {
-	users := entity.Users{} //customize user
+	users := entity.Users{} // customize user
 	var err error
-	//us, err = application.UserApp.GetUsers()
+	// us, err = application.UserApp.GetUsers()
 	users, err = s.us.GetUsers()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, err.Error())

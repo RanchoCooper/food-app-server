@@ -1,19 +1,20 @@
 package main
 
 import (
-	"food-app/infrastructure/persistence"
-	"food-app/interfaces"
-	"food-app/utils/auth"
-	"food-app/utils/fileupload"
-	"food-app/utils/middleware"
-	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 	"log"
 	"os"
+
+	"food-app-server/infrastructure/persistence"
+	"food-app-server/interfaces"
+	"food-app-server/utils/auth"
+	"food-app-server/utils/fileupload"
+	"food-app-server/utils/middleware"
+	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func init() {
-	//To load our environmental variables.
+	// To load our environmental variables.
 	if err := godotenv.Load(); err != nil {
 		log.Println("no env gotten")
 	}
@@ -28,11 +29,10 @@ func main() {
 	dbname := os.Getenv("DB_NAME")
 	port := os.Getenv("DB_PORT")
 
-	//redis details
-	redis_host := os.Getenv("REDIS_HOST")
-	redis_port := os.Getenv("REDIS_PORT")
-	redis_password := os.Getenv("REDIS_PASSWORD")
-
+	// redis details
+	redisHost := os.Getenv("REDIS_HOST")
+	redisPort := os.Getenv("REDIS_PORT")
+	redisPassword := os.Getenv("REDIS_PASSWORD")
 
 	services, err := persistence.NewRepositories(dbdriver, user, password, port, host, dbname)
 	if err != nil {
@@ -41,7 +41,7 @@ func main() {
 	defer services.Close()
 	services.Automigrate()
 
-	redisService, err := auth.NewRedisDB(redis_host, redis_port, redis_password)
+	redisService, err := auth.NewRedisDB(redisHost, redisPort, redisPassword)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -54,30 +54,29 @@ func main() {
 	authenticate := interfaces.NewAuthenticate(services.User, redisService.Auth, tk)
 
 	r := gin.Default()
-	r.Use(middleware.CORSMiddleware()) //For CORS
+	r.Use(middleware.CORSMiddleware()) // For CORS
 
-	//user routes
+	// user routes
 	r.POST("/users", users.SaveUser)
 	r.GET("/users", users.GetUsers)
 	r.GET("/users/:user_id", users.GetUser)
 
-	//post routes
+	// post routes
 	r.POST("/food", middleware.AuthMiddleware(), middleware.MaxSizeAllowed(8192000), foods.SaveFood)
 	r.PUT("/food/:food_id", middleware.AuthMiddleware(), middleware.MaxSizeAllowed(8192000), foods.UpdateFood)
 	r.GET("/food/:food_id", foods.GetFoodAndCreator)
 	r.DELETE("/food/:food_id", middleware.AuthMiddleware(), foods.DeleteFood)
 	r.GET("/food", foods.GetAllFood)
 
-	//authentication routes
+	// authentication routes
 	r.POST("/login", authenticate.Login)
 	r.POST("/logout", authenticate.Logout)
 	r.POST("/refresh", authenticate.Refresh)
 
-
-	//Starting the application
-	app_port := os.Getenv("PORT") //using heroku host
-	if app_port == "" {
-		app_port = "8888" //localhost
+	// Starting the application
+	appPort := os.Getenv("PORT") // using heroku host
+	if appPort == "" {
+		appPort = "8888" // localhost
 	}
-	log.Fatal(r.Run(":"+app_port))
+	log.Fatal(r.Run(":" + appPort))
 }

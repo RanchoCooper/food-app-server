@@ -1,12 +1,12 @@
 package application
 
 import (
-	"food-app/domain/entity"
+	"food-app-server/domain/entity"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
-//IF YOU HAVE TIME, YOU CAN TEST ALL THE METHODS FAILURES
+// IF YOU HAVE TIME, YOU CAN TEST ALL THE METHODS FAILURES
 
 type fakeFoodRepo struct{}
 
@@ -34,11 +34,11 @@ func (f *fakeFoodRepo) DeleteFood(foodId uint64) error {
 	return deleteFoodRepo(foodId)
 }
 
-//var fakeFood repository.FoodRepository = &fakeFoodRepo{} //this is where the real implementation is swap with our fake implementation
-var foodAppFake FoodAppInterface = &fakeFoodRepo{} //this is where the real implementation is swap with our fake implementation
+// var fakeFood repository.FoodRepository = &fakeFoodRepo{} // this is where the real implementation is swap with our fake implementation
+var foodAppFake FoodAppInterface = &fakeFoodRepo{} // this is where the real implementation is swap with our fake implementation
 
 func TestSaveFood_Success(t *testing.T) {
-	//Mock the response coming from the infrastructure
+	// Mock the response coming from the infrastructure
 	saveFoodRepo = func(user *entity.Food) (*entity.Food, map[string]string) {
 		return &entity.Food{
 			ID:          1,
@@ -61,7 +61,7 @@ func TestSaveFood_Success(t *testing.T) {
 }
 
 func TestGetFood_Success(t *testing.T) {
-	//Mock the response coming from the infrastructure
+	// Mock the response coming from the infrastructure
 	getFoodRepo = func(foodId uint64) (*entity.Food, error) {
 		return &entity.Food{
 			ID:          1,
@@ -79,7 +79,7 @@ func TestGetFood_Success(t *testing.T) {
 }
 
 func TestAllFood_Success(t *testing.T) {
-	//Mock the response coming from the infrastructure
+	// Mock the response coming from the infrastructure
 	getAllFoodRepo = func() ([]entity.Food, error) {
 		return []entity.Food{
 			{
@@ -102,7 +102,7 @@ func TestAllFood_Success(t *testing.T) {
 }
 
 func TestUpdateFood_Success(t *testing.T) {
-	//Mock the response coming from the infrastructure
+	// Mock the response coming from the infrastructure
 	updateFoodRepo = func(user *entity.Food) (*entity.Food, map[string]string) {
 		return &entity.Food{
 			ID:          1,
@@ -125,7 +125,7 @@ func TestUpdateFood_Success(t *testing.T) {
 }
 
 func TestDeleteFood_Success(t *testing.T) {
-	//Mock the response coming from the infrastructure
+	// Mock the response coming from the infrastructure
 	deleteFoodRepo = func(foodId uint64) error {
 		return nil
 	}

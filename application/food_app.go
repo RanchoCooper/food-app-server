@@ -1,14 +1,13 @@
 package application
 
 import (
-	"food-app/domain/entity"
-	"food-app/domain/repository"
+	"food-app-server/domain/entity"
+	"food-app-server/domain/repository"
 )
 
 type foodApp struct {
 	fr repository.FoodRepository
 }
-
 
 var _ FoodAppInterface = &foodApp{}
 

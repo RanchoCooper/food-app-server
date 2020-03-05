@@ -1,11 +1,12 @@
 package entity
 
 import (
-	"food-app/utils/security"
-	"github.com/badoux/checkmail"
 	"html"
 	"strings"
 	"time"
+
+	"food-app-server/utils/security"
+	"github.com/badoux/checkmail"
 )
 
 type User struct {
@@ -25,7 +26,7 @@ type PublicUser struct {
 	LastName  string `gorm:"size:100;not null;" json:"last_name"`
 }
 
-//BeforeSave is a gorm hook
+// BeforeSave is a gorm hook
 func (u *User) BeforeSave() error {
 	hashPassword, err := security.Hash(u.Password)
 	if err != nil {
@@ -37,7 +38,7 @@ func (u *User) BeforeSave() error {
 
 type Users []User
 
-//So that we dont expose the user's email address and password to the world
+// So that we dont expose the user's email address and password to the world
 func (users Users) PublicUsers() []interface{} {
 	result := make([]interface{}, len(users))
 	for index, user := range users {
@@ -46,7 +47,7 @@ func (users Users) PublicUsers() []interface{} {
 	return result
 }
 
-//So that we dont expose the user's email address and password to the world
+// So that we dont expose the user's email address and password to the world
 func (u *User) PublicUser() interface{} {
 	return &PublicUser{
 		ID:        u.ID,

@@ -2,14 +2,15 @@ package interfaces
 
 import (
 	"fmt"
-	"food-app/application"
-	"food-app/domain/entity"
-	"food-app/utils/auth"
-	"github.com/dgrijalva/jwt-go"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"os"
 	"strconv"
+
+	"food-app-server/application"
+	"food-app-server/domain/entity"
+	"food-app-server/utils/auth"
+	"github.com/dgrijalva/jwt-go"
+	"github.com/gin-gonic/gin"
 )
 
 type Authenticate struct {
@@ -18,7 +19,7 @@ type Authenticate struct {
 	tk auth.TokenInterface
 }
 
-//Authenticate constructor
+// Authenticate constructor
 func NewAuthenticate(uApp application.UserAppInterface, rd auth.AuthInterface, tk auth.TokenInterface) *Authenticate {
 	return &Authenticate{
 		us: uApp,
@@ -35,7 +36,7 @@ func (au *Authenticate) Login(c *gin.Context) {
 		c.JSON(http.StatusUnprocessableEntity, "Invalid json provided")
 		return
 	}
-	//validate request:
+	// validate request:
 	validateUser := user.Validate("login")
 	if len(validateUser) > 0 {
 		c.JSON(http.StatusUnprocessableEntity, validateUser)
@@ -68,13 +69,13 @@ func (au *Authenticate) Login(c *gin.Context) {
 }
 
 func (au *Authenticate) Logout(c *gin.Context) {
-	//check is the user is authenticated first
+	// check is the user is authenticated first
 	metadata, err := au.tk.ExtractTokenMetadata(c.Request)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, "Unauthorized")
 		return
 	}
-	//if the access token exist and it is still valid, then delete both the access token and the refresh token
+	// if the access token exist and it is still valid, then delete both the access token and the refresh token
 	deleteErr := au.rd.DeleteTokens(metadata)
 	if deleteErr != nil {
 		c.JSON(http.StatusUnauthorized, deleteErr.Error())
@@ -83,7 +84,7 @@ func (au *Authenticate) Logout(c *gin.Context) {
 	c.JSON(http.StatusOK, "Successfully logged out")
 }
 
-//Refresh is the function that uses the refresh_token to generate new pairs of refresh and access tokens.
+// Refresh is the function that uses the refresh_token to generate new pairs of refresh and access tokens.
 func (au *Authenticate) Refresh(c *gin.Context) {
 	mapToken := map[string]string{}
 	if err := c.ShouldBindJSON(&mapToken); err != nil {
@@ -92,28 +93,28 @@ func (au *Authenticate) Refresh(c *gin.Context) {
 	}
 	refreshToken := mapToken["refresh_token"]
 
-	//verify the token
+	// verify the token
 	token, err := jwt.Parse(refreshToken, func(token *jwt.Token) (interface{}, error) {
-		//Make sure that the token method conform to "SigningMethodHMAC"
+		// Make sure that the token method conform to "SigningMethodHMAC"
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 		return []byte(os.Getenv("REFRESH_SECRET")), nil
 	})
-	//any error may be due to token expiration
+	// any error may be due to token expiration
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, err.Error())
 		return
 	}
-	//is token valid?
+	// is token valid?
 	if _, ok := token.Claims.(jwt.Claims); !ok && !token.Valid {
 		c.JSON(http.StatusUnauthorized, err)
 		return
 	}
-	//Since token is valid, get the uuid:
+	// Since token is valid, get the uuid:
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if ok && token.Valid {
-		refreshUuid, ok := claims["refresh_uuid"].(string) //convert the interface to string
+		refreshUuid, ok := claims["refresh_uuid"].(string) // convert the interface to string
 		if !ok {
 			c.JSON(http.StatusUnprocessableEntity, "Cannot get uuid")
 			return
@@ -123,19 +124,19 @@ func (au *Authenticate) Refresh(c *gin.Context) {
 			c.JSON(http.StatusUnprocessableEntity, "Error occurred")
 			return
 		}
-		//Delete the previous Refresh Token
+		// Delete the previous Refresh Token
 		delErr := au.rd.DeleteRefresh(refreshUuid)
-		if delErr != nil { //if any goes wrong
+		if delErr != nil { // if any goes wrong
 			c.JSON(http.StatusUnauthorized, "unauthorized")
 			return
 		}
-		//Create new pairs of refresh and access tokens
+		// Create new pairs of refresh and access tokens
 		ts, createErr := au.tk.CreateToken(userId)
 		if createErr != nil {
 			c.JSON(http.StatusForbidden, createErr.Error())
 			return
 		}
-		//save the tokens metadata to redis
+		// save the tokens metadata to redis
 		saveErr := au.rd.CreateAuth(userId, ts)
 		if saveErr != nil {
 			c.JSON(http.StatusForbidden, saveErr.Error())

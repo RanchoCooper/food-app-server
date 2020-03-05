@@ -24,7 +24,7 @@ type UploadFileInterface interface {
 	UploadFile(file *multipart.FileHeader) (string, error)
 }
 
-//So what is exposed is Uploader
+// So what is exposed is Uploader
 var _ UploadFileInterface = &fileUpload{}
 
 func (fu *fileUpload) UploadFile(file *multipart.FileHeader) (string, error) {
@@ -35,17 +35,17 @@ func (fu *fileUpload) UploadFile(file *multipart.FileHeader) (string, error) {
 	defer f.Close()
 
 	size := file.Size
-	//The image should not be more than 500KB
+	// The image should not be more than 500KB
 	fmt.Println("the size: ", size)
 	if size > int64(512000) {
 		return "", errors.New("sorry, please upload an Image of 500KB or less")
 	}
-	//only the first 512 bytes are used to sniff the content type of a file,
-	//so, so no need to read the entire bytes of a file.
+	// only the first 512 bytes are used to sniff the content type of a file,
+	// so, so no need to read the entire bytes of a file.
 	buffer := make([]byte, size)
 	f.Read(buffer)
 	fileType := http.DetectContentType(buffer)
-	//if the image is valid
+	// if the image is valid
 	if !strings.HasPrefix(fileType, "image") {
 		return "", errors.New("please upload a valid image")
 	}
@@ -53,7 +53,7 @@ func (fu *fileUpload) UploadFile(file *multipart.FileHeader) (string, error) {
 	filePath := FormatFile(file.Filename)
 	path := "/profile-photos/" + filePath
 	params := &s3.PutObjectInput{
-		Bucket:        aws.String("chodapi"), //this is the name i saved the bucket that contains the image
+		Bucket:        aws.String("chodapi"), // this is the name i saved the bucket that contains the image
 		Key:           aws.String(path),
 		Body:          fileBytes,
 		ContentLength: aws.Int64(size),

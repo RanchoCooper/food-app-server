@@ -22,12 +22,12 @@ jobs: # basic units of work in a run
       #  Wait for Postgres to be ready before proceeding
       - run:
           name: Waiting for Postgres to be ready
-          command: dockerize -wait tcp://localhost:5432 -timeout 1m
+          command: dockerize -wait tcp:// localhost:5432 -timeout 1m
 
       - run:
           name: Run unit tests
           environment: # environment variables for the database url and path to migration files
-            FORUM_DB_URL: "postgres://steven@localhost:5432/food-app-test?sslmode=disable"
+            FORUM_DB_URL: "postgres:// steven@localhost:5432/food-app-test?sslmode=disable"
           command: go test -v ./...  # our test is inside the "tests" folder, so target only that
 
 workflows:

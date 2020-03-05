@@ -5,10 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"food-app/domain/entity"
-	"food-app/utils/auth"
-	"github.com/gin-gonic/gin"
-	"github.com/stretchr/testify/assert"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -16,19 +12,24 @@ import (
 	"os"
 	"strconv"
 	"testing"
+
+	"food-app-server/domain/entity"
+	"food-app-server/utils/auth"
+	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/assert"
 )
 
-//IF YOU HAVE TIME, YOU CAN TEST ALL FAILURE CASES TO IMPROVE COVERAGE
+// IF YOU HAVE TIME, YOU CAN TEST ALL FAILURE CASES TO IMPROVE COVERAGE
 
 func Test_SaveFood_Invalid_Data(t *testing.T) {
-	//Mock extracting metadata
+	// Mock extracting metadata
 	fakeToken.ExtractTokenMetadataFn = func(r *http.Request) (*auth.AccessDetails, error) {
 		return &auth.AccessDetails{
 			TokenUuid: "0237817a-1546-4ca3-96a4-17621c237f6b",
 			UserId:    1,
 		}, nil
 	}
-	//Mocking the fetching of token metadata from redis
+	// Mocking the fetching of token metadata from redis
 	fakeAuth.FetchAuthFn = func(uuid string) (uint64, error) {
 		return 1, nil
 	}
@@ -37,34 +38,34 @@ func Test_SaveFood_Invalid_Data(t *testing.T) {
 		statusCode int
 	}{
 		{
-			//when the title is empty
+			// when the title is empty
 			inputJSON:  `{"title": "", "description": "the desc"}`,
 			statusCode: 422,
 		},
 		{
-			//the description is empty
+			// the description is empty
 			inputJSON:  `{"title": "the title", "description": ""}`,
 			statusCode: 422,
 		},
 		{
-			//both the title and the description are empty
+			// both the title and the description are empty
 			inputJSON:  `{"title": "", "description": ""}`,
 			statusCode: 422,
 		},
 		{
-			//When invalid data is passed, e.g, instead of an integer, a string is passed
+			// When invalid data is passed, e.g, instead of an integer, a string is passed
 			inputJSON:  `{"title": 12344, "description": "the desc"}`,
 			statusCode: 422,
 		},
 		{
-			//When invalid data is passed, e.g, instead of an integer, a string is passed
+			// When invalid data is passed, e.g, instead of an integer, a string is passed
 			inputJSON:  `{"title": "hello title", "description": 3242342}`,
 			statusCode: 422,
 		},
 	}
 
 	for _, v := range samples {
-		//use a valid token that has not expired. This token was created to live forever, just for test purposes with the user id of 1. This is so that it can always be used to run tests
+		// use a valid token that has not expired. This token was created to live forever, just for test purposes with the user id of 1. This is so that it can always be used to run tests
 		token := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NfdXVpZCI6IjgyYTM3YWE5LTI4MGMtNDQ2OC04M2RmLTZiOGYyMDIzODdkMyIsImF1dGhvcml6ZWQiOnRydWUsInVzZXJfaWQiOjF9.ESelxq-UHormgXUwRNe4_Elz2i__9EKwCXPsNCyKV5o"
 		tokenString := fmt.Sprintf("Bearer %v", token)
 
@@ -105,30 +106,30 @@ func Test_SaveFood_Invalid_Data(t *testing.T) {
 
 func TestSaverFood_Success(t *testing.T) {
 
-	//Mock extracting metadata
+	// Mock extracting metadata
 	fakeToken.ExtractTokenMetadataFn = func(r *http.Request) (*auth.AccessDetails, error) {
 		return &auth.AccessDetails{
 			TokenUuid: "0237817a-1546-4ca3-96a4-17621c237f6b",
 			UserId:    1,
 		}, nil
 	}
-	//Mocking the fetching of token metadata from redis
+	// Mocking the fetching of token metadata from redis
 	fakeAuth.FetchAuthFn = func(uuid string) (uint64, error) {
 		return 1, nil
 	}
 	userApp.GetUserFn = func(uint64) (*entity.User, error) {
-		//remember we are running sensitive info such as email and password
+		// remember we are running sensitive info such as email and password
 		return &entity.User{
 			ID:        1,
 			FirstName: "victor",
 			LastName:  "steven",
 		}, nil
 	}
-	//Mocking file upload to DigitalOcean
+	// Mocking file upload to DigitalOcean
 	fakeUpload.UploadFileFn = func(file *multipart.FileHeader) (string, error) {
-		return "dbdbf-dhbfh-bfy34-34jh-fd.jpg", nil //this is fabricated
+		return "dbdbf-dhbfh-bfy34-34jh-fd.jpg", nil // this is fabricated
 	}
-	//Mocking The Food return from db
+	// Mocking The Food return from db
 	foodApp.SaveFoodFn = func(*entity.Food) (*entity.Food, map[string]string) {
 		return &entity.Food{
 			ID:          1,
@@ -138,30 +139,30 @@ func TestSaverFood_Success(t *testing.T) {
 			FoodImage:   "dbdbf-dhbfh-bfy34-34jh-fd.jpg",
 		}, nil
 	}
-	image := "./../utils/test_images/amala.jpg" //this is where the image is located
+	image := "./../utils/test_images/amala.jpg" // this is where the image is located
 	file, err := os.Open(image)
 	if err != nil {
 		t.Errorf("Cannot open file: %s\n", err)
 	}
 	defer file.Close()
 
-	//Create a buffer to store our request body as bytes
+	// Create a buffer to store our request body as bytes
 	var requestBody bytes.Buffer
 
-	//Create a multipart writer
+	// Create a multipart writer
 	multipartWriter := multipart.NewWriter(&requestBody)
 
-	//Initialize the file field
+	// Initialize the file field
 	fileWriter, err := multipartWriter.CreateFormFile("food_image", "amala.jpg")
 	if err != nil {
 		t.Errorf("Cannot write file: %s\n", err)
 	}
-	//Copy the actual content to the file field's writer, though this is not needed, since files are sent to DigitalOcean
+	// Copy the actual content to the file field's writer, though this is not needed, since files are sent to DigitalOcean
 	_, err = io.Copy(fileWriter, file)
 	if err != nil {
 		t.Errorf("Cannot copy file: %s\n", err)
 	}
-	//Add the title and the description fields
+	// Add the title and the description fields
 	fileWriter, err = multipartWriter.CreateFormField("title")
 	if err != nil {
 		t.Errorf("Cannot write title: %s\n", err)
@@ -178,10 +179,10 @@ func TestSaverFood_Success(t *testing.T) {
 	if err != nil {
 		t.Errorf("Cannot write description value: %s\n", err)
 	}
-	//Close the multipart writer so it writes the ending boundary
+	// Close the multipart writer so it writes the ending boundary
 	multipartWriter.Close()
 
-	//This can be anything, since we have already mocked the method that checks if the token is valid or not and have told it what to return for us.
+	// This can be anything, since we have already mocked the method that checks if the token is valid or not and have told it what to return for us.
 	token := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NfdXVpZCI6IjgyYTM3YWE5LTI4MGMtNDQ2OC04M2RmLTZiOGYyMDIzODdkMyIsImF1dGhvcml6ZWQiOnRydWUsInVzZXJfaWQiOjF9.ESelxq-UHormgXUwRNe4_Elz2i__9EKwCXPsNCyKV5o"
 
 	tokenString := fmt.Sprintf("Bearer %v", token)
@@ -193,7 +194,7 @@ func TestSaverFood_Success(t *testing.T) {
 	r := gin.Default()
 	r.POST("/food", f.SaveFood)
 	req.Header.Set("Authorization", tokenString)
-	req.Header.Set("Content-Type", multipartWriter.FormDataContentType()) //this is important
+	req.Header.Set("Content-Type", multipartWriter.FormDataContentType()) // this is important
 	rr := httptest.NewRecorder()
 	r.ServeHTTP(rr, req)
 
@@ -210,37 +211,37 @@ func TestSaverFood_Success(t *testing.T) {
 	assert.EqualValues(t, food.FoodImage, "dbdbf-dhbfh-bfy34-34jh-fd.jpg")
 }
 
-//When wrong token is provided
+// When wrong token is provided
 func TestSaverFood_Unauthorized(t *testing.T) {
-	//Mock extracting metadata
+	// Mock extracting metadata
 	fakeToken.ExtractTokenMetadataFn = func(r *http.Request) (*auth.AccessDetails, error) {
 		return nil, errors.New("unauthorized")
 	}
 
-	image := "./../utils/test_images/amala.jpg" //this is where the image is located
+	image := "./../utils/test_images/amala.jpg" // this is where the image is located
 	file, err := os.Open(image)
 	if err != nil {
 		t.Errorf("Cannot open file: %s\n", err)
 	}
 	defer file.Close()
 
-	//Create a buffer to store our request body as bytes
+	// Create a buffer to store our request body as bytes
 	var requestBody bytes.Buffer
 
-	//Create a multipart writer
+	// Create a multipart writer
 	multipartWriter := multipart.NewWriter(&requestBody)
 
-	//Initialize the file field
+	// Initialize the file field
 	fileWriter, err := multipartWriter.CreateFormFile("food_image", "amala.jpg")
 	if err != nil {
 		t.Errorf("Cannot write file: %s\n", err)
 	}
-	//Copy the actual content to the file field's writer, though this is not needed, since files are sent to DigitalOcean
+	// Copy the actual content to the file field's writer, though this is not needed, since files are sent to DigitalOcean
 	_, err = io.Copy(fileWriter, file)
 	if err != nil {
 		t.Errorf("Cannot copy file: %s\n", err)
 	}
-	//Add the title and the description fields
+	// Add the title and the description fields
 	fileWriter, err = multipartWriter.CreateFormField("title")
 	if err != nil {
 		t.Errorf("Cannot write title: %s\n", err)
@@ -257,7 +258,7 @@ func TestSaverFood_Unauthorized(t *testing.T) {
 	if err != nil {
 		t.Errorf("Cannot write description value: %s\n", err)
 	}
-	//Close the multipart writer so it writes the ending boundary
+	// Close the multipart writer so it writes the ending boundary
 	multipartWriter.Close()
 
 	token := "wrong-token-string"
@@ -271,7 +272,7 @@ func TestSaverFood_Unauthorized(t *testing.T) {
 	r := gin.Default()
 	r.POST("/food", f.SaveFood)
 	req.Header.Set("Authorization", tokenString)
-	req.Header.Set("Content-Type", multipartWriter.FormDataContentType()) //this is important
+	req.Header.Set("Content-Type", multipartWriter.FormDataContentType()) // this is important
 	rr := httptest.NewRecorder()
 	r.ServeHTTP(rr, req)
 
@@ -285,9 +286,9 @@ func TestSaverFood_Unauthorized(t *testing.T) {
 }
 
 func TestGetAllFood_Success(t *testing.T) {
-	//application.FoodApp = &fakeFoodApp{} //make it possible to change real method with fake
+	// application.FoodApp = &fakeFoodApp{} // make it possible to change real method with fake
 
-	//Return Food to check for, with our mock
+	// Return Food to check for, with our mock
 	foodApp.GetAllFoodFn = func() ([]entity.Food, error) {
 		return []entity.Food{
 			{
@@ -327,14 +328,14 @@ func TestGetAllFood_Success(t *testing.T) {
 func TestGetFoodAndCreator_Success(t *testing.T) {
 
 	userApp.GetUserFn = func(uint64) (*entity.User, error) {
-		//remember we are running sensitive info such as email and password
+		// remember we are running sensitive info such as email and password
 		return &entity.User{
 			ID:        1,
 			FirstName: "victor",
 			LastName:  "steven",
 		}, nil
 	}
-	//Return Food to check for, with our mock
+	// Return Food to check for, with our mock
 	foodApp.GetFoodFn = func(uint64) (*entity.Food, error) {
 		return &entity.Food{
 			ID:          1,
@@ -374,26 +375,26 @@ func TestGetFoodAndCreator_Success(t *testing.T) {
 
 func TestUpdateFood_Success_With_File(t *testing.T) {
 
-	//Mock extracting metadata
+	// Mock extracting metadata
 	fakeToken.ExtractTokenMetadataFn = func(r *http.Request) (*auth.AccessDetails, error) {
 		return &auth.AccessDetails{
 			TokenUuid: "0237817a-1546-4ca3-96a4-17621c237f6b",
 			UserId:    1,
 		}, nil
 	}
-	//Mocking the fetching of token metadata from redis
+	// Mocking the fetching of token metadata from redis
 	fakeAuth.FetchAuthFn = func(uuid string) (uint64, error) {
 		return 1, nil
 	}
 	userApp.GetUserFn = func(uint64) (*entity.User, error) {
-		//remember we are running sensitive info such as email and password
+		// remember we are running sensitive info such as email and password
 		return &entity.User{
 			ID:        1,
 			FirstName: "victor",
 			LastName:  "steven",
 		}, nil
 	}
-	//Return Food to check for, with our mock
+	// Return Food to check for, with our mock
 	foodApp.GetFoodFn = func(uint64) (*entity.Food, error) {
 		return &entity.Food{
 			ID:          1,
@@ -403,7 +404,7 @@ func TestUpdateFood_Success_With_File(t *testing.T) {
 			FoodImage:   "dbdbf-dhbfh-bfy34-34jh-fd.jpg",
 		}, nil
 	}
-	//Mocking The Food return from db
+	// Mocking The Food return from db
 	foodApp.UpdateFoodFn = func(*entity.Food) (*entity.Food, map[string]string) {
 		return &entity.Food{
 			ID:          1,
@@ -414,35 +415,35 @@ func TestUpdateFood_Success_With_File(t *testing.T) {
 		}, nil
 	}
 
-	//Mocking file upload to DigitalOcean
+	// Mocking file upload to DigitalOcean
 	fakeUpload.UploadFileFn = func(file *multipart.FileHeader) (string, error) {
-		return "dbdbf-dhbfh-bfy34-34jh-fd-updated.jpg", nil //this is fabricated
+		return "dbdbf-dhbfh-bfy34-34jh-fd-updated.jpg", nil // this is fabricated
 	}
 
-	image := "./../utils/test_images/new_meal.jpeg" //this is where the image is located
+	image := "./../utils/test_images/new_meal.jpeg" // this is where the image is located
 	file, err := os.Open(image)
 	if err != nil {
 		t.Errorf("Cannot open file: %s\n", err)
 	}
 	defer file.Close()
 
-	//Create a buffer to store our request body as bytes
+	// Create a buffer to store our request body as bytes
 	var requestBody bytes.Buffer
 
-	//Create a multipart writer
+	// Create a multipart writer
 	multipartWriter := multipart.NewWriter(&requestBody)
 
-	//Initialize the file field
+	// Initialize the file field
 	fileWriter, err := multipartWriter.CreateFormFile("food_image", "new_meal.jpeg")
 	if err != nil {
 		t.Errorf("Cannot write file: %s\n", err)
 	}
-	//Copy the actual content to the file field's writer, though this is not needed, since files are sent to DigitalOcean
+	// Copy the actual content to the file field's writer, though this is not needed, since files are sent to DigitalOcean
 	_, err = io.Copy(fileWriter, file)
 	if err != nil {
 		t.Errorf("Cannot copy file: %s\n", err)
 	}
-	//Add the title and the description fields
+	// Add the title and the description fields
 	fileWriter, err = multipartWriter.CreateFormField("title")
 	if err != nil {
 		t.Errorf("Cannot write title: %s\n", err)
@@ -459,10 +460,10 @@ func TestUpdateFood_Success_With_File(t *testing.T) {
 	if err != nil {
 		t.Errorf("Cannot write description value: %s\n", err)
 	}
-	//Close the multipart writer so it writes the ending boundary
+	// Close the multipart writer so it writes the ending boundary
 	multipartWriter.Close()
 
-	//This can be anything, since we have already mocked the method that checks if the token is valid or not and have told it what to return for us.
+	// This can be anything, since we have already mocked the method that checks if the token is valid or not and have told it what to return for us.
 	token := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NfdXVpZCI6IjgyYTM3YWE5LTI4MGMtNDQ2OC04M2RmLTZiOGYyMDIzODdkMyIsImF1dGhvcml6ZWQiOnRydWUsInVzZXJfaWQiOjF9.ESelxq-UHormgXUwRNe4_Elz2i__9EKwCXPsNCyKV5o"
 
 	tokenString := fmt.Sprintf("Bearer %v", token)
@@ -475,7 +476,7 @@ func TestUpdateFood_Success_With_File(t *testing.T) {
 	r := gin.Default()
 	r.PUT("/food/:food_id", f.UpdateFood)
 	req.Header.Set("Authorization", tokenString)
-	req.Header.Set("Content-Type", multipartWriter.FormDataContentType()) //this is important
+	req.Header.Set("Content-Type", multipartWriter.FormDataContentType()) // this is important
 	rr := httptest.NewRecorder()
 	r.ServeHTTP(rr, req)
 
@@ -492,29 +493,29 @@ func TestUpdateFood_Success_With_File(t *testing.T) {
 	assert.EqualValues(t, food.FoodImage, "dbdbf-dhbfh-bfy34-34jh-fd-updated.jpg")
 }
 
-//This is where file is not updated. A user can choose not to update file, in that case, the old file will still be used
+// This is where file is not updated. A user can choose not to update file, in that case, the old file will still be used
 func TestUpdateFood_Success_Without_File(t *testing.T) {
 
-	//Mock extracting metadata
+	// Mock extracting metadata
 	fakeToken.ExtractTokenMetadataFn = func(r *http.Request) (*auth.AccessDetails, error) {
 		return &auth.AccessDetails{
 			TokenUuid: "0237817a-1546-4ca3-96a4-17621c237f6b",
 			UserId:    1,
 		}, nil
 	}
-	//Mocking the fetching of token metadata from redis
+	// Mocking the fetching of token metadata from redis
 	fakeAuth.FetchAuthFn = func(uuid string) (uint64, error) {
 		return 1, nil
 	}
 	userApp.GetUserFn = func(uint64) (*entity.User, error) {
-		//remember we are running sensitive info such as email and password
+		// remember we are running sensitive info such as email and password
 		return &entity.User{
 			ID:        1,
 			FirstName: "victor",
 			LastName:  "steven",
 		}, nil
 	}
-	//Return Food to check for, with our mock
+	// Return Food to check for, with our mock
 	foodApp.GetFoodFn = func(uint64) (*entity.Food, error) {
 		return &entity.Food{
 			ID:          1,
@@ -524,7 +525,7 @@ func TestUpdateFood_Success_Without_File(t *testing.T) {
 			FoodImage:   "dbdbf-dhbfh-bfy34-34jh-fd-old-file.jpg",
 		}, nil
 	}
-	//Mocking The Food return from db
+	// Mocking The Food return from db
 	foodApp.UpdateFoodFn = func(*entity.Food) (*entity.Food, map[string]string) {
 		return &entity.Food{
 			ID:          1,
@@ -535,18 +536,18 @@ func TestUpdateFood_Success_Without_File(t *testing.T) {
 		}, nil
 	}
 
-	//Mocking file upload to DigitalOcean
+	// Mocking file upload to DigitalOcean
 	fakeUpload.UploadFileFn = func(file *multipart.FileHeader) (string, error) {
-		return "dbdbf-dhbfh-bfy34-34jh-fd-old-file.jpg", nil //this is fabricated
+		return "dbdbf-dhbfh-bfy34-34jh-fd-old-file.jpg", nil // this is fabricated
 	}
 
-	//Create a buffer to store our request body as bytes
+	// Create a buffer to store our request body as bytes
 	var requestBody bytes.Buffer
 
-	//Create a multipart writer
+	// Create a multipart writer
 	multipartWriter := multipart.NewWriter(&requestBody)
 
-	//Add the title and the description fields
+	// Add the title and the description fields
 	fileWriter, err := multipartWriter.CreateFormField("title")
 	if err != nil {
 		t.Errorf("Cannot write title: %s\n", err)
@@ -563,10 +564,10 @@ func TestUpdateFood_Success_Without_File(t *testing.T) {
 	if err != nil {
 		t.Errorf("Cannot write description value: %s\n", err)
 	}
-	//Close the multipart writer so it writes the ending boundary
+	// Close the multipart writer so it writes the ending boundary
 	multipartWriter.Close()
 
-	//This can be anything, since we have already mocked the method that checks if the token is valid or not and have told it what to return for us.
+	// This can be anything, since we have already mocked the method that checks if the token is valid or not and have told it what to return for us.
 	token := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NfdXVpZCI6IjgyYTM3YWE5LTI4MGMtNDQ2OC04M2RmLTZiOGYyMDIzODdkMyIsImF1dGhvcml6ZWQiOnRydWUsInVzZXJfaWQiOjF9.ESelxq-UHormgXUwRNe4_Elz2i__9EKwCXPsNCyKV5o"
 
 	tokenString := fmt.Sprintf("Bearer %v", token)
@@ -579,7 +580,7 @@ func TestUpdateFood_Success_Without_File(t *testing.T) {
 	r := gin.Default()
 	r.PUT("/food/:food_id", f.UpdateFood)
 	req.Header.Set("Authorization", tokenString)
-	req.Header.Set("Content-Type", multipartWriter.FormDataContentType()) //this is important
+	req.Header.Set("Content-Type", multipartWriter.FormDataContentType()) // this is important
 	rr := httptest.NewRecorder()
 	r.ServeHTTP(rr, req)
 
@@ -598,14 +599,14 @@ func TestUpdateFood_Success_Without_File(t *testing.T) {
 
 func TestUpdateFood_Invalid_Data(t *testing.T) {
 
-	//Mock extracting metadata
+	// Mock extracting metadata
 	fakeToken.ExtractTokenMetadataFn = func(r *http.Request) (*auth.AccessDetails, error) {
 		return &auth.AccessDetails{
 			TokenUuid: "0237817a-1546-4ca3-96a4-17621c237f6b",
 			UserId:    1,
 		}, nil
 	}
-	//Mocking the fetching of token metadata from redis
+	// Mocking the fetching of token metadata from redis
 	fakeAuth.FetchAuthFn = func(uuid string) (uint64, error) {
 		return 1, nil
 	}
@@ -615,27 +616,27 @@ func TestUpdateFood_Invalid_Data(t *testing.T) {
 		statusCode int
 	}{
 		{
-			//when the title is empty
+			// when the title is empty
 			inputJSON:  `{"title": "", "description": "the desc"}`,
 			statusCode: 422,
 		},
 		{
-			//the description is empty
+			// the description is empty
 			inputJSON:  `{"title": "the title", "description": ""}`,
 			statusCode: 422,
 		},
 		{
-			//both the title and the description are empty
+			// both the title and the description are empty
 			inputJSON:  `{"title": "", "description": ""}`,
 			statusCode: 422,
 		},
 		{
-			//When invalid data is passed, e.g, instead of an integer, a string is passed
+			// When invalid data is passed, e.g, instead of an integer, a string is passed
 			inputJSON:  `{"title": 12344, "description": "the desc"}`,
 			statusCode: 422,
 		},
 		{
-			//When invalid data is passed, e.g, instead of an integer, a string is passed
+			// When invalid data is passed, e.g, instead of an integer, a string is passed
 			inputJSON:  `{"title": "hello sir", "description": 3242342}`,
 			statusCode: 422,
 		},
@@ -643,7 +644,7 @@ func TestUpdateFood_Invalid_Data(t *testing.T) {
 
 	for _, v := range samples {
 
-		//use a valid token that has not expired. This token was created to live forever, just for test purposes with the user id of 1. This is so that it can always be used to run tests
+		// use a valid token that has not expired. This token was created to live forever, just for test purposes with the user id of 1. This is so that it can always be used to run tests
 		token := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NfdXVpZCI6IjgyYTM3YWE5LTI4MGMtNDQ2OC04M2RmLTZiOGYyMDIzODdkMyIsImF1dGhvcml6ZWQiOnRydWUsInVzZXJfaWQiOjF9.ESelxq-UHormgXUwRNe4_Elz2i__9EKwCXPsNCyKV5o"
 		tokenString := fmt.Sprintf("Bearer %v", token)
 
@@ -685,18 +686,18 @@ func TestUpdateFood_Invalid_Data(t *testing.T) {
 }
 
 func TestDeleteFood_Success(t *testing.T) {
-	//Mock extracting metadata
+	// Mock extracting metadata
 	fakeToken.ExtractTokenMetadataFn = func(r *http.Request) (*auth.AccessDetails, error) {
 		return &auth.AccessDetails{
 			TokenUuid: "0237817a-1546-4ca3-96a4-17621c237f6b",
 			UserId:    1,
 		}, nil
 	}
-	//Mocking the fetching of token metadata from redis
+	// Mocking the fetching of token metadata from redis
 	fakeAuth.FetchAuthFn = func(uuid string) (uint64, error) {
 		return 1, nil
 	}
-	//Return Food to check for, with our mock
+	// Return Food to check for, with our mock
 	foodApp.GetFoodFn = func(uint64) (*entity.Food, error) {
 		return &entity.Food{
 			ID:          1,
@@ -707,19 +708,19 @@ func TestDeleteFood_Success(t *testing.T) {
 		}, nil
 	}
 	userApp.GetUserFn = func(uint64) (*entity.User, error) {
-		//remember we are running sensitive info such as email and password
+		// remember we are running sensitive info such as email and password
 		return &entity.User{
 			ID:        1,
 			FirstName: "victor",
 			LastName:  "steven",
 		}, nil
 	}
-	//The deleted food mock:
+	// The deleted food mock:
 	foodApp.DeleteFoodFn = func(uint64) error {
 		return nil
 	}
 
-	//This can be anything, since we have already mocked the method that checks if the token is valid or not and have told it what to return for us.
+	// This can be anything, since we have already mocked the method that checks if the token is valid or not and have told it what to return for us.
 	token := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NfdXVpZCI6IjgyYTM3YWE5LTI4MGMtNDQ2OC04M2RmLTZiOGYyMDIzODdkMyIsImF1dGhvcml6ZWQiOnRydWUsInVzZXJfaWQiOjF9.ESelxq-UHormgXUwRNe4_Elz2i__9EKwCXPsNCyKV5o"
 
 	tokenString := fmt.Sprintf("Bearer %v", token)

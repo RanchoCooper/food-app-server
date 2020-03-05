@@ -2,12 +2,13 @@ package persistence
 
 import (
 	"errors"
-	"food-app/domain/entity"
-	"food-app/domain/repository"
-	"food-app/utils/security"
+	"strings"
+
+	"food-app-server/domain/entity"
+	"food-app-server/domain/repository"
+	"food-app-server/utils/security"
 	"github.com/jinzhu/gorm"
 	"golang.org/x/crypto/bcrypt"
-	"strings"
 )
 
 type UserRepo struct {
@@ -17,19 +18,20 @@ type UserRepo struct {
 func NewUserRepository(db *gorm.DB) *UserRepo {
 	return &UserRepo{db}
 }
-//UserRepo implements the repository.UserRepository interface
+
+// UserRepo implements the repository.UserRepository interface
 var _ repository.UserRepository = &UserRepo{}
 
 func (r *UserRepo) SaveUser(user *entity.User) (*entity.User, map[string]string) {
 	dbErr := map[string]string{}
 	err := r.db.Debug().Create(&user).Error
 	if err != nil {
-		//If the email is already taken
+		// If the email is already taken
 		if strings.Contains(err.Error(), "duplicate") || strings.Contains(err.Error(), "Duplicate") {
 			dbErr["email_taken"] = "email already taken"
 			return nil, dbErr
 		}
-		//any other db error
+		// any other db error
 		dbErr["db_error"] = "database error"
 		return nil, dbErr
 	}
@@ -72,7 +74,7 @@ func (r *UserRepo) GetUserByEmailAndPassword(u *entity.User) (*entity.User, map[
 		dbErr["db_error"] = "database error"
 		return nil, dbErr
 	}
-	//Verify the password
+	// Verify the password
 	err = security.VerifyPassword(user.Password, u.Password)
 	if err != nil && err == bcrypt.ErrMismatchedHashAndPassword {
 		dbErr["incorrect_password"] = "incorrect password"

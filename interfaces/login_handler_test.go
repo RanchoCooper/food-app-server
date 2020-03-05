@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"food-app/domain/entity"
-	"food-app/utils/auth"
+	"food-app-server/domain/entity"
+	"food-app-server/utils/auth"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"net/http"
@@ -14,26 +14,26 @@ import (
 	"testing"
 )
 
-//IF YOU HAVE TIME, YOU CAN TEST ALL FAILURE CASES TO IMPROVE COVERAGE
+// IF YOU HAVE TIME, YOU CAN TEST ALL FAILURE CASES TO IMPROVE COVERAGE
 
-//We dont need to mock the application layer, because we won't get there. So we will use table test to cover all validation errors
+// We dont need to mock the application layer, because we won't get there. So we will use table test to cover all validation errors
 func Test_Login_Invalid_Data(t *testing.T) {
 	samples := []struct {
 		inputJSON  string
 		statusCode int
 	}{
 		{
-			//empty email
+			// empty email
 			inputJSON:  `{"email": "","password": "password"}`,
 			statusCode: 422,
 		},
 		{
-			//empty password
+			// empty password
 			inputJSON:  `{"email": "steven@example.com","password": ""}`,
 			statusCode: 422,
 		},
 		{
-			//invalid email
+			// invalid email
 			inputJSON:  `{"email": "stevenexample.com","password": ""}`,
 			statusCode: 422,
 		},
@@ -119,18 +119,18 @@ func Test_Login_Success(t *testing.T) {
 }
 
 func TestLogout_Success(t *testing.T) {
-	//Mock extracting metadata
+	// Mock extracting metadata
 	fakeToken.ExtractTokenMetadataFn = func(r *http.Request) (*auth.AccessDetails, error) {
 		return &auth.AccessDetails{
 			TokenUuid: "0237817a-1546-4ca3-96a4-17621c237f6b",
 			UserId:    1,
 		}, nil
 	}
-	//Mock the methods that Logout depend on
+	// Mock the methods that Logout depend on
 	fakeAuth.DeleteTokensFn = func(*auth.AccessDetails) error {
 		return nil
 	}
-	//This can be anything, since we have already mocked the method that checks if the token is valid or not and have told it what to return for us.
+	// This can be anything, since we have already mocked the method that checks if the token is valid or not and have told it what to return for us.
 	token := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NfdXVpZCI6IjgyYTM3YWE5LTI4MGMtNDQ2OC04M2RmLTZiOGYyMDIzODdkMyIsImF1dGhvcml6ZWQiOnRydWUsInVzZXJfaWQiOjF9.ESelxq-UHormgXUwRNe4_Elz2i__9EKwCXPsNCyKV5o"
 
 	tokenString := fmt.Sprintf("Bearer %v", token)
@@ -176,8 +176,8 @@ func TestRefresh_Success(t *testing.T) {
 	r := gin.Default()
 	r.POST("/refresh", au.Refresh)
 
-	//Note that since we will be cheking this token, A secret is needed. THis secret was used to create the token,
-	//lets set it, so that this test can retrieve it. Setting it this way we save us from importing the .env, which we dont really need.
+	// Note that since we will be cheking this token, A secret is needed. THis secret was used to create the token,
+	// lets set it, so that this test can retrieve it. Setting it this way we save us from importing the .env, which we dont really need.
 	os.Setenv("REFRESH_SECRET", "786dfdbjhsb")
 
 	inputJSON := `{

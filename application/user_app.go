@@ -1,15 +1,15 @@
 package application
 
 import (
-	"food-app/domain/entity"
-	"food-app/domain/repository"
+	"food-app-server/domain/entity"
+	"food-app-server/domain/repository"
 )
 
 type userApp struct {
 	us repository.UserRepository
 }
 
-//UserApp implements the UserAppInterface
+// UserApp implements the UserAppInterface
 var _ UserAppInterface = &userApp{}
 
 type UserAppInterface interface {
